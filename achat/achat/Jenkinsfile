@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         //jdk 'JDK8'          // IMPORTANT: Java 1.8 dans ton pom.xml
-        maven 'Maven'       // Nom configuré dans Jenkins
+        maven 'Maven3'       // Nom configuré dans Jenkins
     }
 
     environment {
