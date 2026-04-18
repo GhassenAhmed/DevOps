@@ -8,6 +8,7 @@ pipeline {
 
     environment {
         APP_NAME = "achat"
+        SONAR_TOKEN = credentials('sonar-token')
     }
 
     stages {
@@ -35,6 +36,16 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                dir('achat/achat') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'mvn sonar:sonar -Dsonar.projectKey=achat -Dsonar.projectName=achat'
+                    }
+                }
+            }
+        }
+
         stage('Package') {
             steps {
                 dir('achat/achat') {
@@ -42,6 +53,19 @@ pipeline {
                 }
             }
         }
+
+        stage('Nexus Deploy') {
+            steps {
+                dir('achat/achat') {
+                    sh '''
+                        mvn deploy \
+                          -DskipTests \
+                          -DaltDeploymentRepository=nexus::default::http://localhost:8081/repository/maven-releases/
+                    '''
+                }
+            }
+        }
+
 
     }
 
