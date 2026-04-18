@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        jdk 'JDK8'          // IMPORTANT: Java 1.8 dans ton pom.xml
+        //jdk 'JDK8'          // IMPORTANT: Java 1.8 dans ton pom.xml
         maven 'Maven'       // Nom configuré dans Jenkins
     }
 
@@ -14,45 +14,35 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo 'Récupération du code depuis Git...'
-                git 'https://github.com/GhassenAhmed/DevOps/tree/badiss'
+                git branch: 'badiss',
+                    url: 'https://github.com/GhassenAhmed/DevOps'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Compilation du projet...'
-                sh 'mvn clean compile'
+                dir('achat/achat') {
+                    sh 'mvn clean compile'
+                }
             }
         }
 
-        stage('Test') {
+        stage('Tests') {
             steps {
-                echo 'Exécution des tests...'
-                sh 'mvn test'
+                dir('achat/achat') {
+                    sh 'mvn test'
+                }
             }
         }
 
         stage('Package') {
             steps {
-                echo 'Génération du fichier JAR...'
-                sh 'mvn package -DskipTests'
+                dir('achat/achat') {
+                    sh 'mvn package -DskipTests'
+                }
             }
         }
 
-        stage('Archive') {
-            steps {
-                echo 'Archivage du JAR...'
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-            }
-        }
-
-        stage('Run') {
-            steps {
-                echo 'Lancement de l’application Spring Boot...'
-                sh 'nohup java -jar target/*.jar > app.log 2>&1 &'
-            }
-        }
     }
 
     post {
