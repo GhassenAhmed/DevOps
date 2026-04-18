@@ -62,12 +62,10 @@ stage('Nexus Deploy') {
                 usernameVariable: 'NEXUS_USER',
                 passwordVariable: 'NEXUS_PASS'
             )]) {
-                sh '''
+                sh """
                     mvn deploy -DskipTests \
-                      -DaltDeploymentRepository=nexus::default::http://localhost:8081/repository/maven-snapshots/ \
-                      -Dusername=$NEXUS_USER \
-                      -Dpassword=$NEXUS_PASS
-                '''
+                      -DaltDeploymentRepository=nexus::default::http://\${NEXUS_USER}:\${NEXUS_PASS}@localhost:8081/repository/maven-snapshots/
+                """
             }
         }
     }
