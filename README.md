@@ -1,191 +1,255 @@
-# 🛒 Gestion Commerciale — Spring Boot
+# 🛒 Achat — Purchase Management API
 
-Une API REST de gestion commerciale développée avec **Spring Boot**, couvrant la gestion des produits, fournisseurs, factures, stocks et règlements.
+A RESTful backend for purchase and inventory management, built with **Spring Boot 2.5.3** and **Java 8**.  
+Developed as part of the **DevOps** module at ESPRIT.
 
 ---
 
-## 📋 Table des matières
+## 📋 Table of Contents
 
-- [Fonctionnalités](#fonctionnalités)
-- [Entités principales](#entités-principales)
-- [Stack technique](#stack-technique)
-- [Démarrage](#démarrage)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
 - [Configuration](#configuration)
-- [Structure du projet](#structure-du-projet)
-- [Endpoints API](#endpoints-api)
-- [Contribuer](#contribuer)
-- [Licence](#licence)
+- [API Endpoints](#api-endpoints)
+- [Project Structure](#project-structure)
+- [Swagger UI](#swagger-ui)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-- 📦 Gestion des **produits** et de leurs catégories
-- 🏭 Gestion des **fournisseurs** avec leurs détails et secteurs d'activité
-- 🧾 Création et suivi des **factures** avec détails ligne par ligne
-- 💰 Gestion des **règlements** (paiements)
-- 📊 Suivi du **stock** en temps réel
-- 👤 Gestion des **opérateurs** (utilisateurs internes)
-- 🗂️ Catégorisation des fournisseurs et des produits
+- 📦 **Product management** — CRUD operations and stock assignment
+- 🗂️ **Product category management**
+- 🏭 **Supplier (Fournisseur) management** — with sector of activity assignment
+- 🧾 **Invoice (Facture) management** — creation, cancellation, operator assignment, and recovery rate calculation
+- 💰 **Payment (Reglement) management** — with revenue calculation between two dates
+- 📊 **Stock management** — CRUD and product-to-stock assignment
+- 👤 **Operator management** — CRUD for internal users
+- 🏢 **Sector of Activity management**
+- 📖 **Swagger UI** — auto-generated interactive API documentation
 
 ---
 
-## 🗃️ Entités principales
+## 🛠️ Tech Stack
 
-| Entité | Description |
+| Technology | Version |
 |---|---|
-| `Produit` | Produits disponibles à la vente |
-| `CategorieProduit` | Catégories des produits |
-| `Fournisseur` | Fournisseurs partenaires |
-| `DetailFournisseur` | Informations détaillées des fournisseurs |
-| `CategorieFournisseur` | Catégories des fournisseurs |
-| `SecteurActivite` | Secteurs d'activité des fournisseurs |
-| `Facture` | Factures générées |
-| `DetailFacture` | Lignes de détail d'une facture |
-| `Reglement` | Paiements associés aux factures |
-| `Stock` | Gestion des niveaux de stock |
-| `Operateur` | Utilisateurs/opérateurs du système |
+| Java | 1.8 |
+| Spring Boot | 2.5.3 |
+| Spring Data JPA | - |
+| Hibernate | - |
+| MySQL | - |
+| Lombok | - |
+| Springfox Swagger | 3.0.0 |
+| Maven | 3.8+ |
 
 ---
 
-## 🛠️ Stack technique
+## 🚀 Getting Started
 
-- **Java 17+**
-- **Spring Boot 3.x**
-- **Spring Data JPA / Hibernate**
-- **Spring Web (REST)**
-- **Maven**
-- **Base de données** : MySQL / PostgreSQL (configurable)
-- **Lombok** (recommandé)
+### Prerequisites
 
----
-
-## 🚀 Démarrage
-
-### Prérequis
-
-- Java 17+
+- Java 8+
 - Maven 3.8+
-- MySQL ou PostgreSQL installé et en cours d'exécution
+- MySQL running locally
 
 ### Installation
 
 ```bash
-# Cloner le dépôt
-git clone https://github.com/ton-utilisateur/gestion-commerciale.git
-cd gestion-commerciale
+# Clone the repository
+git clone https://github.com/your-username/achat.git
+cd achat
 
-# Compiler le projet
+# Build the project
 mvn clean install
 
-# Lancer l'application
+# Run the application
 mvn spring-boot:run
 ```
 
-L'API sera disponible sur : `http://localhost:8080`
+The API will be available at: `http://localhost:8089/SpringMVC`
 
 ---
 
 ## ⚙️ Configuration
 
-Modifie le fichier `src/main/resources/application.properties` :
+Edit `src/main/resources/application.properties`:
 
 ```properties
-# Base de données
-spring.datasource.url=jdbc:mysql://localhost:3306/gestion_commerciale
+# Server
+server.port=8089
+server.servlet.context-path=/SpringMVC
+
+# Database
+spring.datasource.url=jdbc:mysql://localhost:3306/achat_db
 spring.datasource.username=root
-spring.datasource.password=ton_mot_de_passe
+spring.datasource.password=your_password
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
 # JPA / Hibernate
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
-
-# Port du serveur
-server.port=8080
 ```
 
 ---
 
-## 📁 Structure du projet
+## 📡 API Endpoints
+
+Base URL: `http://localhost:8089/SpringMVC`
+
+### 📦 Products — `/produit`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/produit/retrieve-all-produits` | List all products |
+| `GET` | `/produit/retrieve-produit/{produit-id}` | Get a product by ID |
+| `POST` | `/produit/add-produit` | Add a new product |
+| `PUT` | `/produit/modify-produit` | Update a product |
+| `DELETE` | `/produit/remove-produit/{produit-id}` | Delete a product |
+| `PUT` | `/produit/assignProduitToStock/{idProduit}/{idStock}` | Assign a product to a stock |
+
+### 🗂️ Product Categories — `/categorieProduit`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/categorieProduit/retrieve-all-categorieProduit` | List all product categories |
+| `GET` | `/categorieProduit/retrieve-categorieProduit/{id}` | Get a category by ID |
+| `POST` | `/categorieProduit/add-categorieProduit` | Add a new category |
+| `PUT` | `/categorieProduit/modify-categorieProduit` | Update a category |
+| `DELETE` | `/categorieProduit/remove-categorieProduit/{id}` | Delete a category |
+
+### 🏭 Suppliers — `/fournisseur`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/fournisseur/retrieve-all-fournisseurs` | List all suppliers |
+| `GET` | `/fournisseur/retrieve-fournisseur/{id}` | Get a supplier by ID |
+| `POST` | `/fournisseur/add-fournisseur` | Add a new supplier |
+| `PUT` | `/fournisseur/modify-fournisseur` | Update a supplier |
+| `DELETE` | `/fournisseur/remove-fournisseur/{id}` | Delete a supplier |
+| `PUT` | `/fournisseur/assignSecteurActiviteToFournisseur/{idSecteur}/{idFournisseur}` | Assign a sector to a supplier |
+
+### 🧾 Invoices — `/facture`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/facture/retrieve-all-factures` | List all invoices |
+| `GET` | `/facture/retrieve-facture/{id}` | Get an invoice by ID |
+| `POST` | `/facture/add-facture` | Add a new invoice |
+| `PUT` | `/facture/cancel-facture/{id}` | Cancel an invoice |
+| `GET` | `/facture/getFactureByFournisseur/{id}` | Get invoices by supplier |
+| `PUT` | `/facture/assignOperateurToFacture/{idOperateur}/{idFacture}` | Assign an operator to an invoice |
+| `GET` | `/facture/pourcentageRecouvrement/{startDate}/{endDate}` | Get recovery rate between two dates |
+
+### 💰 Payments — `/reglement`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/reglement/add-reglement` | Add a new payment |
+| `GET` | `/reglement/retrieve-all-reglements` | List all payments |
+| `GET` | `/reglement/retrieve-reglement/{id}` | Get a payment by ID |
+| `GET` | `/reglement/retrieveReglementByFacture/{facture-id}` | Get payments by invoice |
+| `GET` | `/reglement/getChiffreAffaireEntreDeuxDate/{startDate}/{endDate}` | Get revenue between two dates |
+
+### 📊 Stock — `/stock`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/stock/retrieve-all-stocks` | List all stocks |
+| `GET` | `/stock/retrieve-stock/{id}` | Get a stock by ID |
+| `POST` | `/stock/add-stock` | Add a new stock |
+| `PUT` | `/stock/modify-stock` | Update a stock |
+| `DELETE` | `/stock/remove-stock/{id}` | Delete a stock |
+
+### 👤 Operators — `/operateur`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/operateur/retrieve-all-operateurs` | List all operators |
+| `GET` | `/operateur/retrieve-operateur/{id}` | Get an operator by ID |
+| `POST` | `/operateur/add-operateur` | Add a new operator |
+| `PUT` | `/operateur/modify-operateur` | Update an operator |
+| `DELETE` | `/operateur/remove-operateur/{id}` | Delete an operator |
+
+### 🏢 Sectors of Activity — `/secteurActivite`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/secteurActivite/retrieve-all-secteurActivite` | List all sectors |
+| `GET` | `/secteurActivite/retrieve-secteurActivite/{id}` | Get a sector by ID |
+| `POST` | `/secteurActivite/add-secteurActivite` | Add a new sector |
+| `PUT` | `/secteurActivite/modify-secteurActivite` | Update a sector |
+| `DELETE` | `/secteurActivite/remove-secteurActivite/{id}` | Delete a sector |
+
+---
+
+## 📁 Project Structure
 
 ```
 src/
 └── main/
     ├── java/
-    │   └── com/exemple/gestioncommerciale/
+    │   └── tn/esprit/rh/achat/
+    │       ├── controllers/
+    │       │   ├── CategorieProduitController.java
+    │       │   ├── FactureRestController.java
+    │       │   ├── FournisseurRestController.java
+    │       │   ├── OperateurController.java
+    │       │   ├── ProduitRestController.java
+    │       │   ├── ReglementRestController.java
+    │       │   ├── SecteurActiviteController.java
+    │       │   └── StockRestController.java
     │       ├── entities/
-    │       │   ├── Produit.java
     │       │   ├── CategorieProduit.java
-    │       │   ├── Fournisseur.java
-    │       │   ├── DetailFournisseur.java
     │       │   ├── CategorieFournisseur.java
-    │       │   ├── SecteurActivite.java
-    │       │   ├── Facture.java
     │       │   ├── DetailFacture.java
+    │       │   ├── DetailFournisseur.java
+    │       │   ├── Facture.java
+    │       │   ├── Fournisseur.java
+    │       │   ├── Operateur.java
+    │       │   ├── Produit.java
     │       │   ├── Reglement.java
-    │       │   ├── Stock.java
-    │       │   └── Operateur.java
+    │       │   ├── SecteurActivite.java
+    │       │   └── Stock.java
     │       ├── repositories/
     │       ├── services/
-    │       ├── controllers/
-    │       └── GestionCommercialeApplication.java
+    │       └── AchatApplication.java
     └── resources/
         └── application.properties
 ```
 
 ---
 
-## 📡 Endpoints API
+## 📖 Swagger UI
 
-### Produits
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/produits` | Lister tous les produits |
-| `GET` | `/api/produits/{id}` | Obtenir un produit |
-| `POST` | `/api/produits` | Créer un produit |
-| `PUT` | `/api/produits/{id}` | Modifier un produit |
-| `DELETE` | `/api/produits/{id}` | Supprimer un produit |
+Once the application is running, access the interactive API documentation at:
 
-### Fournisseurs
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/fournisseurs` | Lister tous les fournisseurs |
-| `GET` | `/api/fournisseurs/{id}` | Obtenir un fournisseur |
-| `POST` | `/api/fournisseurs` | Créer un fournisseur |
-| `PUT` | `/api/fournisseurs/{id}` | Modifier un fournisseur |
-| `DELETE` | `/api/fournisseurs/{id}` | Supprimer un fournisseur |
-
-### Factures
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/factures` | Lister toutes les factures |
-| `GET` | `/api/factures/{id}` | Obtenir une facture |
-| `POST` | `/api/factures` | Créer une facture |
-| `PUT` | `/api/factures/{id}` | Modifier une facture |
-| `DELETE` | `/api/factures/{id}` | Supprimer une facture |
-
-### Stock
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/stocks` | Voir l'état du stock |
-| `PUT` | `/api/stocks/{id}` | Mettre à jour le stock |
+```
+http://localhost:8089/SpringMVC/swagger-ui/index.html
+```
 
 ---
 
-## 🤝 Contribuer
+## 🤝 Contributing
 
-Les contributions sont les bienvenues !
+Contributions are welcome!
 
-1. Fork le projet
-2. Crée une branche (`git checkout -b feature/ma-fonctionnalite`)
-3. Commit tes changements (`git commit -m 'Ajout de ma fonctionnalité'`)
-4. Push la branche (`git push origin feature/ma-fonctionnalite`)
-5. Ouvre une Pull Request
+1. Fork the project
+2. Create your branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add my feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
 
 ---
 
-## 📄 Licence
+## 📄 License
 
-Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
+---
+
+> 🎓 Developed at **ESPRIT** — School of Private Engineering and Technology, Tunisia.
