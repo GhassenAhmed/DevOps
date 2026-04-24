@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -7,7 +6,6 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-
                 dir('achat/achat') {
                     sh 'mvn clean package -DskipTests'
                 }
@@ -17,7 +15,6 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running tests...'
-
                 dir('achat/achat') {
                     sh 'mvn test'
                 }
@@ -27,7 +24,6 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Analyzing code with SonarQube...'
-
                 dir('achat/achat') {
                     withSonarQubeEnv('Sonar') {
                         sh 'mvn sonar:sonar'
@@ -36,10 +32,18 @@ pipeline {
             }
         }
 
+        stage('Deploy to Nexus') {
+            steps {
+                echo 'Deploying artifact to Nexus...'
+                dir('achat/achat') {
+                    sh 'mvn deploy -DskipTests'
+                }
+            }
+        }
+
         stage('Run') {
             steps {
                 echo 'Starting application...'
-
                 dir('achat/achat') {
                     sh 'nohup java -jar target/*.jar > app.log 2>&1 &'
                 }
@@ -51,11 +55,9 @@ pipeline {
         success {
             echo 'Build and execution SUCCESS'
         }
-
         failure {
             echo 'Build FAILED'
         }
-
         always {
             echo 'Pipeline finished'
         }
