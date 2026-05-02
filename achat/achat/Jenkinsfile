@@ -1,47 +1,76 @@
-
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = 'achat-app'
+        IMAGE_TAG  = "${BUILD_NUMBER}"
+    }
+
     stages {
+
+        stage('Checkout') {
+            steps {
+                echo '📥 Récupération du code...'
+                checkout scm
+            }
+        }
 
         stage('Build') {
             steps {
-                echo 'Building the project...'
-
+                echo '🔨 Build Maven...'
                 dir('achat/achat') {
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn clean package -DskipTests -B'
                 }
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
-
+                echo '🧪 Tests unitaires...'
                 dir('achat/achat') {
-                    sh 'mvn test'
+                    sh 'mvn test -B'
                 }
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('Docker Build') {
             steps {
-                echo 'Analyzing code with SonarQube...'
-
+                echo '🐳 Construction image Docker...'
                 dir('achat/achat') {
-                    withSonarQubeEnv('Sonar') {
-                        sh 'mvn sonar:sonar'
-                    }
+                    sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                    sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
                 }
             }
         }
 
-        stage('Run') {
+        stage('Docker Test') {
             steps {
-                echo 'Starting application...'
+                echo '🧪 Test du conteneur...'
+                sh '''
+                    docker run -d --name test-${BUILD_NUMBER} \
+                      -p 18080:8080 \
+                      -e SPRING_DATASOURCE_URL=jdbc:mysql://devops-db:3306/achatdb?createDatabaseIfNotExist=true \
+                      -e SPRING_DATASOURCE_USERNAME=root \
+                      -e SPRING_DATASOURCE_PASSWORD=root \
+                      --network achat_devops-net \
+                      ${IMAGE_NAME}:${IMAGE_TAG}
+                    sleep 40
+                    curl -f http://localhost:18080/actuator/health
+                '''
+            }
+            post {
+                always {
+                    sh 'docker stop test-${BUILD_NUMBER} || true'
+                    sh 'docker rm test-${BUILD_NUMBER} || true'
+                }
+            }
+        }
 
+        stage('Docker Deploy') {
+            steps {
+                echo '🚀 Déploiement avec Docker Compose...'
                 dir('achat/achat') {
-                    sh 'nohup java -jar target/*.jar > app.log 2>&1 &'
+                    sh 'docker compose up -d --no-deps --build app'
                 }
             }
         }
@@ -49,15 +78,13 @@ pipeline {
 
     post {
         success {
-            echo 'Build and execution SUCCESS'
+            echo '✅ Pipeline terminé avec succès !'
         }
-
         failure {
-            echo 'Build FAILED'
+            echo '❌ Pipeline échoué !'
         }
-
         always {
-            echo 'Pipeline finished'
+            echo '🏁 Pipeline finished'
         }
     }
 }
