@@ -6,11 +6,6 @@ pipeline {
         IMAGE_TAG  = "${BUILD_NUMBER}"
     }
 
-    tools {
-        maven 'Maven3'
-        jdk   'JDK11'
-    }
-
     stages {
 
         stage('Checkout') {
@@ -23,18 +18,17 @@ pipeline {
         stage('Build') {
             steps {
                 echo '🔨 Build Maven...'
-                sh 'mvn clean package -DskipTests -B'
+                dir('achat/achat') {
+                    sh 'mvn clean package -DskipTests -B'
+                }
             }
         }
 
-        stage('Tests') {
+        stage('Test') {
             steps {
                 echo '🧪 Tests unitaires...'
-                sh 'mvn test -B'
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml'
+                dir('achat/achat') {
+                    sh 'mvn test -B'
                 }
             }
         }
@@ -42,8 +36,10 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo '🐳 Construction image Docker...'
-                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
-                sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
+                dir('achat/achat') {
+                    sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                    sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
+                }
             }
         }
 
@@ -73,7 +69,9 @@ pipeline {
         stage('Docker Deploy') {
             steps {
                 echo '🚀 Déploiement avec Docker Compose...'
-                sh 'docker compose up -d --no-deps --build app'
+                dir('achat/achat') {
+                    sh 'docker compose up -d --no-deps --build app'
+                }
             }
         }
     }
@@ -84,6 +82,9 @@ pipeline {
         }
         failure {
             echo '❌ Pipeline échoué !'
+        }
+        always {
+            echo '🏁 Pipeline finished'
         }
     }
 }
