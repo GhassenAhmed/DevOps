@@ -1,0 +1,89 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'achat-app'
+        IMAGE_TAG  = "${BUILD_NUMBER}"
+    }
+
+    tools {
+        maven 'Maven3'
+        jdk   'JDK11'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo '📥 Récupération du code...'
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo '🔨 Build Maven...'
+                sh 'mvn clean package -DskipTests -B'
+            }
+        }
+
+        stage('Tests') {
+            steps {
+                echo '🧪 Tests unitaires...'
+                sh 'mvn test -B'
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                echo '🐳 Construction image Docker...'
+                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
+            }
+        }
+
+        stage('Docker Test') {
+            steps {
+                echo '🧪 Test du conteneur...'
+                sh '''
+                    docker run -d --name test-${BUILD_NUMBER} \
+                      -p 18080:8080 \
+                      -e SPRING_DATASOURCE_URL=jdbc:mysql://devops-db:3306/achatdb?createDatabaseIfNotExist=true \
+                      -e SPRING_DATASOURCE_USERNAME=root \
+                      -e SPRING_DATASOURCE_PASSWORD=root \
+                      --network achat_devops-net \
+                      ${IMAGE_NAME}:${IMAGE_TAG}
+                    sleep 40
+                    curl -f http://localhost:18080/actuator/health
+                '''
+            }
+            post {
+                always {
+                    sh 'docker stop test-${BUILD_NUMBER} || true'
+                    sh 'docker rm test-${BUILD_NUMBER} || true'
+                }
+            }
+        }
+
+        stage('Docker Deploy') {
+            steps {
+                echo '🚀 Déploiement avec Docker Compose...'
+                sh 'docker compose up -d --no-deps --build app'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline terminé avec succès !'
+        }
+        failure {
+            echo '❌ Pipeline échoué !'
+        }
+    }
+}
