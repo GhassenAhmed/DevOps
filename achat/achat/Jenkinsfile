@@ -6,22 +6,10 @@ pipeline {
         jdk 'JDK17'
     }
 
-    environment {
-        SONAR_HOST_URL = 'http://localhost:9000'
-    }
-
     stages {
-
-        stage('Checkout') {
-            steps {
-                echo '📥 Cloning project...'
-                git branch: 'main', url: 'https://github.com/GhassenAhmed/DevOps.git'
-            }
-        }
 
         stage('Build') {
             steps {
-                echo '🔨 Build Maven...'
                 script {
                     def mvnHome = tool 'Maven'
                     dir('achat/achat') {
@@ -33,7 +21,6 @@ pipeline {
 
         stage('Test') {
             steps {
-                echo '🧪 Running tests...'
                 script {
                     def mvnHome = tool 'Maven'
                     dir('achat/achat') {
@@ -45,7 +32,6 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                echo '📊 Sonar analysis...'
                 script {
                     def mvnHome = tool 'Maven'
                     dir('achat/achat') {
@@ -59,21 +45,11 @@ pipeline {
 
         stage('Deploy to Nexus') {
             steps {
-                echo '📦 Deploy to Nexus...'
                 script {
                     def mvnHome = tool 'Maven'
                     dir('achat/achat') {
                         sh "${mvnHome}/bin/mvn deploy -DskipTests"
                     }
-                }
-            }
-        }
-
-        stage('Run Application') {
-            steps {
-                echo '🚀 Starting application...'
-                dir('achat/achat') {
-                    sh 'nohup java -jar target/*.jar > app.log 2>&1 &'
                 }
             }
         }
@@ -85,9 +61,6 @@ pipeline {
         }
         failure {
             echo '❌ PIPELINE FAILED'
-        }
-        always {
-            echo '🏁 Pipeline finished'
         }
     }
 }
