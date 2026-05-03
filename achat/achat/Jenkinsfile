@@ -49,7 +49,7 @@ pipeline {
                 script {
                     def mvnHome = tool 'Maven'
                     dir('achat/achat') {
-                        withSonarQubeEnv('Sonar') {
+                        withSonarQubeEnv('SonarQube') {
                             sh "${mvnHome}/bin/mvn sonar:sonar"
                         }
                     }
