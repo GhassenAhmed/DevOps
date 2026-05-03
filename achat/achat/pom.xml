@@ -98,7 +98,7 @@
 
         <!-- Releases -->
         <repository>
-            <id>nexus</id>
+            <id>nexus-creds</id>
             <name>Nexus Releases</name>
             <url>http://localhost:8081/repository/maven-releases/</url>
         </repository>
