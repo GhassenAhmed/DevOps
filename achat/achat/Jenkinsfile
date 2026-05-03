@@ -45,7 +45,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                echo '📊 SonarQube analysis...'
+                echo '📊 Sonar analysis...'
                 script {
                     def mvnHome = tool 'Maven'
                     dir('achat/achat') {
