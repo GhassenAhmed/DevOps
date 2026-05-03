@@ -5,6 +5,8 @@ pipeline {
         IMAGE_NAME = 'achat-app'
         IMAGE_TAG  = "${BUILD_NUMBER}"
         MVN = '/var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/Maven3/bin/mvn'
+        NEXUS_URL = 'http://172.17.0.1:8081'
+        NEXUS_REPO = 'maven-releases'
     }
 
     stages {
@@ -30,6 +32,37 @@ pipeline {
                 echo '🧪 Tests unitaires...'
                 dir('achat/achat') {
                     sh '${MVN} test -B'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo '🔍 Analyse SonarQube...'
+                dir('achat/achat') {
+                    withSonarQubeEnv('Sonar') {
+                        sh '${MVN} sonar:sonar'
+                    }
+                }
+            }
+        }
+
+        stage('Nexus Deploy') {
+            steps {
+                echo '📦 Publication vers Nexus...'
+                dir('achat/achat') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'nexus-credentials',
+                        usernameVariable: 'NEXUS_USER',
+                        passwordVariable: 'NEXUS_PASS'
+                    )]) {
+                        sh '''
+                            ${MVN} deploy -DskipTests -B \
+                            -DaltDeploymentRepository=nexus-releases::default::${NEXUS_URL}/repository/${NEXUS_REPO} \
+                            -Dusername=${NEXUS_USER} \
+                            -Dpassword=${NEXUS_PASS}
+                        '''
+                    }
                 }
             }
         }
