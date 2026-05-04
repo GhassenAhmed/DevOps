@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     environment {
         IMAGE_NAME = 'achat-app'
         IMAGE_TAG  = "${BUILD_NUMBER}"
@@ -8,16 +7,19 @@ pipeline {
         NEXUS_URL = 'http://172.17.0.1:8081'
         NEXUS_REPO = 'maven-releases'
     }
-
     stages {
-
         stage('Checkout') {
             steps {
                 echo '📥 Récupération du code...'
                 checkout scm
             }
         }
-
+        stage('Docker Permission') {
+            steps {
+                echo '🔧 Fix permissions Docker...'
+                sh 'chmod 666 /var/run/docker.sock || true'
+            }
+        }
         stage('Build') {
             steps {
                 echo '🔨 Build Maven...'
@@ -26,7 +28,6 @@ pipeline {
                 }
             }
         }
-
         stage('Test') {
             steps {
                 echo '🧪 Tests unitaires...'
@@ -35,7 +36,6 @@ pipeline {
                 }
             }
         }
-
         stage('SonarQube Analysis') {
             steps {
                 echo '🔍 Analyse SonarQube...'
@@ -46,7 +46,6 @@ pipeline {
                 }
             }
         }
-
         stage('Nexus Deploy') {
             steps {
                 echo '📦 Publication vers Nexus...'
@@ -59,7 +58,6 @@ pipeline {
                 }
             }
         }
-
         stage('Docker Build') {
             steps {
                 echo '🐳 Construction image Docker...'
@@ -69,7 +67,6 @@ pipeline {
                 }
             }
         }
-
         stage('Docker Test') {
             steps {
                 echo '🧪 Test du conteneur...'
@@ -81,8 +78,19 @@ pipeline {
                       -e SPRING_DATASOURCE_PASSWORD=root \
                       --network achat_devops-net \
                       ${IMAGE_NAME}:${IMAGE_TAG}
-                    sleep 40
-                    curl -f http://localhost:18080/actuator/health
+
+                    echo "⏳ Attente du démarrage (90s max)..."
+                    for i in $(seq 1 18); do
+                        if curl -sf http://localhost:18080/actuator/health > /dev/null 2>&1; then
+                            echo "✅ Application démarrée !"
+                            exit 0
+                        fi
+                        echo "  Tentative $i/18 - attente 5s..."
+                        sleep 5
+                    done
+                    echo "❌ Timeout - application non démarrée"
+                    docker logs test-${BUILD_NUMBER}
+                    exit 1
                 '''
             }
             post {
@@ -92,7 +100,6 @@ pipeline {
                 }
             }
         }
-
         stage('Docker Deploy') {
             steps {
                 echo '🚀 Déploiement avec Docker Compose...'
@@ -102,7 +109,6 @@ pipeline {
             }
         }
     }
-
     post {
         success {
             echo '✅ Pipeline terminé avec succès !'
