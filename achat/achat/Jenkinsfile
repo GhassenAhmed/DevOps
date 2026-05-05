@@ -84,12 +84,15 @@ pipeline {
                       -e SPRING_DATASOURCE_PASSWORD=root \
                       achat-app:${BUILD_NUMBER}
 
-                    echo "⏳ Waiting for application..."
+                    echo "⏳ Waiting for container IP..."
                     sleep 10
+
+                    CONTAINER_IP=$(docker inspect -f "{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}" test-${BUILD_NUMBER})
+                    echo "Container IP: $CONTAINER_IP"
 
                     for i in $(seq 1 30); do
 
-                        RESPONSE=$(curl -s http://localhost:18080/actuator/health || true)
+                        RESPONSE=$(curl -s http://$CONTAINER_IP:8080/actuator/health || true)
 
                         echo "Attempt $i - Response: $RESPONSE"
 
