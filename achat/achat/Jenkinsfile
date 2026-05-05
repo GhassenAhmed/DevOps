@@ -72,7 +72,6 @@ pipeline {
                 echo '🧪 Test du conteneur...'
                 sh '''
                     docker run -d --name test-${BUILD_NUMBER} \
-                      -p 18080:8080 \
                       -e SPRING_DATASOURCE_URL=jdbc:mysql://devops-db:3306/achatdb?createDatabaseIfNotExist=true \
                       -e SPRING_DATASOURCE_USERNAME=root \
                       -e SPRING_DATASOURCE_PASSWORD=root \
@@ -80,8 +79,11 @@ pipeline {
                       ${IMAGE_NAME}:${IMAGE_TAG}
 
                     echo "⏳ Attente du démarrage (90s max)..."
+                    CONTAINER_IP=$(docker inspect -f "{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}" test-${BUILD_NUMBER})
+                    echo "IP du conteneur : $CONTAINER_IP"
+
                     for i in $(seq 1 18); do
-                        if curl -sf http://localhost:18080/actuator/health > /dev/null 2>&1; then
+                        if curl -sf http://$CONTAINER_IP:8080/actuator/health > /dev/null 2>&1; then
                             echo "✅ Application démarrée !"
                             exit 0
                         fi
