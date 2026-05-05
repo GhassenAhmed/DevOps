@@ -71,7 +71,7 @@ pipeline {
 
         stage('Docker Test') {
             steps {
-                sh """
+                sh '''
                     echo "🧹 Cleanup old container..."
                     docker rm -f test-${BUILD_NUMBER} || true
 
@@ -82,9 +82,9 @@ pipeline {
                       -e SPRING_DATASOURCE_URL=jdbc:mysql://devops-db:3306/achatdb?createDatabaseIfNotExist=true \
                       -e SPRING_DATASOURCE_USERNAME=root \
                       -e SPRING_DATASOURCE_PASSWORD=root \
-                      ${IMAGE_NAME}:${IMAGE_TAG}
+                      achat-app:${BUILD_NUMBER}
 
-                    echo "⏳ Waiting for application startup..."
+                    echo "⏳ Waiting for application..."
                     sleep 10
 
                     for i in $(seq 1 30); do
@@ -104,7 +104,7 @@ pipeline {
                     echo "❌ Timeout - application not ready"
                     docker logs test-${BUILD_NUMBER}
                     exit 1
-                """
+                '''
             }
 
             post {
