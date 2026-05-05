@@ -1,5 +1,6 @@
 pipeline {
     agent any
+
     environment {
         IMAGE_NAME = 'achat-app'
         IMAGE_TAG  = "${BUILD_NUMBER}"
@@ -7,38 +8,39 @@ pipeline {
         NEXUS_URL = 'http://172.17.0.1:8081'
         NEXUS_REPO = 'maven-releases'
     }
+
     stages {
+
         stage('Checkout') {
             steps {
-                echo '📥 Récupération du code...'
                 checkout scm
             }
         }
+
         stage('Docker Permission') {
             steps {
-                echo '🔧 Fix permissions Docker...'
                 sh 'chmod 666 /var/run/docker.sock || true'
             }
         }
+
         stage('Build') {
             steps {
-                echo '🔨 Build Maven...'
                 dir('achat/achat') {
                     sh '${MVN} clean package -DskipTests -B'
                 }
             }
         }
+
         stage('Test') {
             steps {
-                echo '🧪 Tests unitaires...'
                 dir('achat/achat') {
                     sh '${MVN} test -B'
                 }
             }
         }
+
         stage('SonarQube Analysis') {
             steps {
-                echo '🔍 Analyse SonarQube...'
                 dir('achat/achat') {
                     withSonarQubeEnv('Sonar') {
                         sh '${MVN} sonar:sonar'
@@ -46,88 +48,81 @@ pipeline {
                 }
             }
         }
+
         stage('Nexus Deploy') {
             steps {
-                echo '📦 Publication vers Nexus...'
                 dir('achat/achat') {
-                    sh '''
+                    sh """
                         ${MVN} deploy -DskipTests -B \
                         -s /var/jenkins_home/.m2/settings.xml \
                         -DaltDeploymentRepository=nexus-releases::default::${NEXUS_URL}/repository/${NEXUS_REPO}
-                    '''
+                    """
                 }
             }
         }
+
         stage('Docker Build') {
             steps {
-                echo '🐳 Construction image Docker...'
                 dir('achat/achat') {
-                    sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
-                    sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
                 }
             }
         }
+
         stage('Docker Test') {
             steps {
-                echo '🧪 Test du conteneur...'
-                sh '''
+                sh """
+                    echo "🧹 Cleanup old container..."
+                    docker rm -f test-${BUILD_NUMBER} || true
+
+                    echo "🐳 Start container..."
                     docker run -d --name test-${BUILD_NUMBER} \
                       -p 18080:8080 \
+                      --network achat_devops-net \
                       -e SPRING_DATASOURCE_URL=jdbc:mysql://devops-db:3306/achatdb?createDatabaseIfNotExist=true \
                       -e SPRING_DATASOURCE_USERNAME=root \
                       -e SPRING_DATASOURCE_PASSWORD=root \
-                      --network achat_devops-net \
                       ${IMAGE_NAME}:${IMAGE_TAG}
 
-                    echo "⏳ Attente MySQL..."
-                    for i in {1..20}; do
-                        if docker exec devops-db mysqladmin ping -h "localhost" --silent; then
-                            echo "✅ MySQL prêt"
-                            break
-                        fi
-                        sleep 3
-                    done
+                    echo "⏳ Waiting for application..."
 
-                    echo "⏳ Attente application..."
                     for i in {1..30}; do
                         if curl -s http://localhost:18080/actuator/health | grep '"status":"UP"' > /dev/null; then
                             echo "✅ Application UP"
                             exit 0
                         fi
-                        echo "Tentative $i..."
+                        echo "Attempt $i..."
                         sleep 5
                     done
 
-                    echo "❌ Timeout - application non prête"
+                    echo "❌ Timeout"
                     docker logs test-${BUILD_NUMBER}
                     exit 1
-                '''
+                """
             }
+
             post {
                 always {
-                    sh 'docker stop test-${BUILD_NUMBER} || true'
-                    sh 'docker rm test-${BUILD_NUMBER} || true'
+                    sh 'docker rm -f test-${BUILD_NUMBER} || true'
                 }
             }
         }
+
         stage('Docker Deploy') {
             steps {
-                echo '🚀 Déploiement avec Docker Compose...'
                 dir('achat/achat') {
                     sh 'docker compose up -d --no-deps --build app'
                 }
             }
         }
     }
+
     post {
         success {
-            echo '✅ Pipeline terminé avec succès !'
+            echo '✅ Pipeline SUCCESS'
         }
         failure {
-            echo '❌ Pipeline échoué !'
-        }
-        always {
-            echo '🏁 Pipeline finished'
+            echo '❌ Pipeline FAILED'
         }
     }
 }
