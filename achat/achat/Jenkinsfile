@@ -84,21 +84,24 @@ pipeline {
                       -e SPRING_DATASOURCE_PASSWORD=root \
                       ${IMAGE_NAME}:${IMAGE_TAG}
 
-                    echo "⏳ Waiting for application..."
+                    echo "⏳ Waiting for application startup..."
+                    sleep 10
 
-                    for i in \$(seq 1 30); do
-                        STATUS=\$(curl -s http://localhost:18080/actuator/health | grep '"status":"UP"')
+                    for i in $(seq 1 30); do
 
-                        if [ ! -z "\$STATUS" ]; then
+                        RESPONSE=$(curl -s http://localhost:18080/actuator/health || true)
+
+                        echo "Attempt $i - Response: $RESPONSE"
+
+                        echo "$RESPONSE" | grep '"status":"UP"' > /dev/null && {
                             echo "✅ Application UP"
                             exit 0
-                        fi
+                        }
 
-                        echo "Attempt \$i..."
                         sleep 5
                     done
 
-                    echo "❌ Timeout"
+                    echo "❌ Timeout - application not ready"
                     docker logs test-${BUILD_NUMBER}
                     exit 1
                 """
