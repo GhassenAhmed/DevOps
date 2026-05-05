@@ -71,7 +71,9 @@ pipeline {
 
         stage('Docker Test') {
             steps {
-                sh '''
+                sh """
+                    set -e
+
                     echo "🧹 Cleanup old container..."
                     docker rm -f test-${BUILD_NUMBER} || true
 
@@ -82,24 +84,28 @@ pipeline {
                       -e SPRING_DATASOURCE_URL=jdbc:mysql://devops-db:3306/achatdb?createDatabaseIfNotExist=true \
                       -e SPRING_DATASOURCE_USERNAME=root \
                       -e SPRING_DATASOURCE_PASSWORD=root \
-                      achat-app:${BUILD_NUMBER}
+                      ${IMAGE_NAME}:${IMAGE_TAG}
 
-                    echo "⏳ Waiting for container IP..."
-                    sleep 10
+                    echo "⏳ Waiting for MySQL connection..."
 
-                    CONTAINER_IP=$(docker inspect -f "{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}" test-${BUILD_NUMBER})
-                    echo "Container IP: $CONTAINER_IP"
+                    for i in $(seq 1 20); do
+                        docker exec devops-db mysqladmin ping -h localhost --silent && break
+                        echo "MySQL not ready yet..."
+                        sleep 3
+                    done
+
+                    echo "⏳ Waiting for Spring Boot health..."
 
                     for i in $(seq 1 30); do
+                        RESPONSE=$(curl -s --max-time 3 http://localhost:18080/actuator/health || true)
 
-                        RESPONSE=$(curl -s http://$CONTAINER_IP:8080/actuator/health || true)
+                        echo "Attempt $i - $RESPONSE"
 
-                        echo "Attempt $i - Response: $RESPONSE"
-
-                        echo "$RESPONSE" | grep '"status":"UP"' > /dev/null && {
-                            echo "✅ Application UP"
+                        echo "$RESPONSE" | grep -q '"status":"UP"'
+                        if [ \$? -eq 0 ]; then
+                            echo "✅ Application is UP"
                             exit 0
-                        }
+                        fi
 
                         sleep 5
                     done
@@ -107,7 +113,7 @@ pipeline {
                     echo "❌ Timeout - application not ready"
                     docker logs test-${BUILD_NUMBER}
                     exit 1
-                '''
+                """
             }
 
             post {
