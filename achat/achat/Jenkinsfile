@@ -108,6 +108,7 @@ pipeline {
                     trivy image \
                         --scanners vuln \
                         --vuln-type os \
+                        --skip-java-db-update \
                         --severity HIGH,CRITICAL \
                         --format table \
                         --exit-code 0 \
