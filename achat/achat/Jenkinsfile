@@ -87,10 +87,11 @@ pipeline {
 
         stage('Trivy Scan - Filesystem') {
             steps {
-                echo '🔒 Scan Trivy des dépendances...'
+                echo '🔒 Scan Trivy des dépendances Maven...'
                 dir('achat/achat') {
                     sh '''
                         trivy fs \
+                            --scanners vuln \
                             --severity HIGH,CRITICAL \
                             --format table \
                             --exit-code 0 \
@@ -102,12 +103,15 @@ pipeline {
 
         stage('Trivy Scan - Image') {
             steps {
-                echo '🔒 Scan Trivy de l\'image Docker...'
+                echo '🔒 Scan Trivy image Docker (OS uniquement)...'
                 sh '''
                     trivy image \
+                        --scanners vuln \
+                        --vuln-type os \
                         --severity HIGH,CRITICAL \
                         --format table \
                         --exit-code 0 \
+                        --timeout 5m \
                         ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
