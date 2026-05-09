@@ -51,21 +51,18 @@ pipeline {
                             --format HTML \
                             --format XML \
                             --out ./dependency-check-report \
-                            --prettyPrint \
-                            --nvdApiKey no-api-key || true
+                            --project achat \
+                            --noupdate || true
                     '''
                 }
             }
             post {
                 always {
-                    publishHTML(target: [
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'achat/achat/dependency-check-report',
-                        reportFiles: 'dependency-check-report.html',
-                        reportName: 'OWASP Dependency Check Report'
-                    ])
+                    dependencyCheckPublisher(
+                        pattern: 'achat/achat/dependency-check-report/dependency-check-report.xml',
+                        failedTotalCritical: 0,
+                        unstableTotalHigh: 10
+                    )
                 }
             }
         }
