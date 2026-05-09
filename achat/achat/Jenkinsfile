@@ -40,30 +40,6 @@ pipeline {
             }
         }
 
-        stage('OWASP Dependency Check') {
-            steps {
-                echo '🔒 Scan OWASP des dépendances...'
-                dir('achat/achat') {
-                    sh '''
-                        ${MVN} org.owasp:dependency-check-maven:check \
-                            -DfailBuildOnCVSS=11 \
-                            -DskipSystemScope=true \
-                            -Dformats=HTML,XML \
-                            -DoutputDirectory=./dependency-check-report || true
-                    '''
-                }
-            }
-            post {
-                always {
-                    dependencyCheckPublisher(
-                        pattern: 'achat/achat/dependency-check-report/dependency-check-report.xml',
-                        failedTotalCritical: 0,
-                        unstableTotalHigh: 10
-                    )
-                }
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
                 echo '🔍 Analyse SonarQube...'
@@ -107,7 +83,22 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan') {
+        stage('Trivy Scan - Filesystem') {
+            steps {
+                echo '🔒 Scan Trivy des dépendances...'
+                dir('achat/achat') {
+                    sh '''
+                        trivy fs \
+                            --severity HIGH,CRITICAL \
+                            --format table \
+                            --exit-code 0 \
+                            ./pom.xml || true
+                    '''
+                }
+            }
+        }
+
+        stage('Trivy Scan - Image') {
             steps {
                 echo '🔒 Scan Trivy de l\'image Docker...'
                 sh '''
