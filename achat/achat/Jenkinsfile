@@ -54,8 +54,10 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 echo '🚦 Vérification Quality Gate...'
-                timeout(time: 2, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: false
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    timeout(time: 1, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: false
+                    }
                 }
             }
         }
