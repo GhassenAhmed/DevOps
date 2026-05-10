@@ -9,6 +9,7 @@ pipeline {
     environment {
         APP_NAME = "achat"
         SONAR_TOKEN = credentials('sonar-token')
+        NVD_API_KEY = credentials('nvd-api-key')
     }
 
     stages {
@@ -77,7 +78,7 @@ stage('OWASP Dependency Check') {
                 credentialsId: 'nvd-api-key',
                 variable: 'NVD_API_KEY'
             )]) {
-                sh 'mvn dependency-check:check -DnvdApiKey=$NVD_API_KEY -DfailBuildOnCVSS=11 || true'
+                sh 'mvn dependency-check:check -DnvdApiKey=$NVD_API_KEY -DfailBuildOnCVSS=11'
             }
         }
     }
