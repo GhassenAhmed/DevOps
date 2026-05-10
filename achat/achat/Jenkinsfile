@@ -73,7 +73,12 @@ stage('Nexus Deploy') {
 stage('OWASP Dependency Check') {
     steps {
         dir('achat/achat') {
-            sh 'mvn dependency-check:check'
+            withCredentials([string(
+                credentialsId: 'nvd-api-key',
+                variable: 'NVD_API_KEY'
+            )]) {
+                sh 'mvn dependency-check:check -DnvdApiKey=$NVD_API_KEY'
+            }
         }
     }
     post {

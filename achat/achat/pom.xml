@@ -83,7 +83,12 @@
 			<plugin>
 				<groupId>org.owasp</groupId>
 				<artifactId>dependency-check-maven</artifactId>
-				<version>8.4.0</version>
+				<version>9.2.0</version>
+				<configuration>
+					<nvdApiKey>${nvdApiKey}</nvdApiKey>
+					<failBuildOnCVSS>7</failBuildOnCVSS>
+					<formats>HTML,JSON</formats>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>
