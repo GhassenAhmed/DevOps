@@ -70,6 +70,25 @@ stage('Nexus Deploy') {
         }
     }
 }
+stage('OWASP Dependency Check') {
+    steps {
+        dir('achat/achat') {
+            sh 'mvn dependency-check:check'
+        }
+    }
+    post {
+        always {
+            publishHTML(target: [
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'achat/achat/target',
+                reportFiles: 'dependency-check-report.html',
+                reportName: 'OWASP Dependency Check Report'
+            ])
+        }
+    }
+}
 
 
     }
