@@ -12,8 +12,11 @@ pipeline {
             steps {
                 script {
                     def mvnHome = tool 'Maven'
+
                     dir('achat/achat') {
+
                         sh "${mvnHome}/bin/mvn clean package -DskipTests"
+
                     }
                 }
             }
@@ -23,8 +26,11 @@ pipeline {
             steps {
                 script {
                     def mvnHome = tool 'Maven'
+
                     dir('achat/achat') {
+
                         sh "${mvnHome}/bin/mvn test"
+
                     }
                 }
             }
@@ -34,9 +40,13 @@ pipeline {
             steps {
                 script {
                     def mvnHome = tool 'Maven'
+
                     dir('achat/achat') {
+
                         withSonarQubeEnv('SonarQube') {
+
                             sh "${mvnHome}/bin/mvn sonar:sonar"
+
                         }
                     }
                 }
@@ -47,8 +57,14 @@ pipeline {
             steps {
                 script {
                     def mvnHome = tool 'Maven'
+
                     dir('achat/achat') {
-                        sh "${mvnHome}/bin/mvn deploy -DskipTests"
+
+                        configFileProvider([configFile(fileId: '320c0ac0-a67f-44ee-aa49-a148b465c062', variable: 'MAVEN_SETTINGS')]) {
+
+                            sh "${mvnHome}/bin/mvn deploy -s $MAVEN_SETTINGS -DskipTests"
+
+                        }
                     }
                 }
             }
@@ -59,6 +75,7 @@ pipeline {
         success {
             echo '✅ PIPELINE SUCCESS'
         }
+
         failure {
             echo '❌ PIPELINE FAILED'
         }
