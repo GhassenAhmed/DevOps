@@ -2,14 +2,18 @@ pipeline {
     agent any
 
     tools {
-        //jdk 'JDK8'          // IMPORTANT: Java 1.8 dans ton pom.xml
-        maven 'Maven3'       // Nom configuré dans Jenkins
+        maven 'Maven3'
     }
 
     environment {
         APP_NAME = "achat"
         SONAR_TOKEN = credentials('sonar-token')
         NVD_API_KEY = credentials('nvd-api-key')
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps()
     }
 
     stages {
@@ -21,18 +25,13 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build & Tests') {
             steps {
                 dir('achat/achat') {
-                    sh 'mvn clean compile'
-                }
-            }
-        }
-
-        stage('Tests') {
-            steps {
-                dir('achat/achat') {
-                    sh 'mvn test'
+                    sh '''
+                        mvn clean verify \
+                        -Dmaven.test.failure.ignore=false
+                    '''
                 }
             }
         }
@@ -41,7 +40,11 @@ pipeline {
             steps {
                 dir('achat/achat') {
                     withSonarQubeEnv('SonarQube') {
-                        sh 'mvn sonar:sonar -Dsonar.projectKey=achat -Dsonar.projectName=achat'
+                        sh '''
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=achat \
+                            -Dsonar.projectName=achat
+                        '''
                     }
                 }
             }
@@ -55,58 +58,65 @@ pipeline {
             }
         }
 
-stage('Nexus Deploy') {
-    steps {
-        dir('achat/achat') {
-            withCredentials([usernamePassword(
-                credentialsId: 'nexus-credentials',
-                usernameVariable: 'NEXUS_USER',
-                passwordVariable: 'NEXUS_PASS'
-            )]) {
-                sh """
-                    mvn deploy -DskipTests \
-                      -DaltDeploymentRepository=nexus::default::http://\${NEXUS_USER}:\${NEXUS_PASS}@localhost:8081/repository/maven-snapshots/
-                """
+        stage('OWASP Dependency Check') {
+            steps {
+                dir('achat/achat') {
+
+                    sh '''
+                        mvn org.owasp:dependency-check-maven:check \
+                        -DnvdApiKey=$NVD_API_KEY \
+                        -Dformats=HTML \
+                        -DfailBuildOnCVSS=11
+                    '''
+                }
+            }
+
+            post {
+                always {
+                    publishHTML(target: [
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'achat/achat/target',
+                        reportFiles: 'dependency-check-report.html',
+                        reportName: 'OWASP Dependency Check Report'
+                    ])
+                }
+            }
+        }
+
+        stage('Nexus Deploy') {
+            steps {
+                dir('achat/achat') {
+
+                    withCredentials([usernamePassword(
+                        credentialsId: 'nexus-credentials',
+                        usernameVariable: 'NEXUS_USER',
+                        passwordVariable: 'NEXUS_PASS'
+                    )]) {
+
+                        sh """
+                            mvn deploy -DskipTests \
+                            -DaltDeploymentRepository=nexus::default::http://${NEXUS_USER}:${NEXUS_PASS}@localhost:8081/repository/maven-snapshots/
+                        """
+                    }
+                }
             }
         }
     }
-}
-stage('OWASP Dependency Check') {
-    steps {
-        dir('achat/achat') {
-            withCredentials([string(
-                credentialsId: 'nvd-api-key',
-                variable: 'NVD_API_KEY'
-            )]) {
-                sh 'mvn dependency-check:check -DnvdApiKey=$NVD_API_KEY -DfailBuildOnCVSS=11'
-            }
-        }
-    }
-    post {
-        always {
-            publishHTML(target: [
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'achat/achat/target',
-                reportFiles: 'dependency-check-report.html',
-                reportName: 'OWASP Dependency Check Report'
-            ])
-        }
-    }
-}
-
-
-    }
 
     post {
+
         success {
             echo 'Build réussi 🎉'
         }
+
         failure {
             echo 'Build échoué ❌'
         }
+
         always {
+            archiveArtifacts artifacts: 'achat/achat/target/*.jar', fingerprint: true
             echo 'Pipeline terminé'
         }
     }
