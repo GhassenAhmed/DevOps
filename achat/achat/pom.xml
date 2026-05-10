@@ -8,17 +8,11 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>2.5.3</version>
-        <relativePath/>
     </parent>
 
     <groupId>tn.esprit.rh</groupId>
     <artifactId>achat</artifactId>
-
-    <!-- 🔥 IMPORTANT -->
     <version>1.0.1-SNAPSHOT</version>
-
-    <name>achat</name>
-    <description>Projet DevOps</description>
 
     <properties>
         <java.version>1.8</java.version>
@@ -26,50 +20,60 @@
 
     <dependencies>
 
-        <!-- Spring Boot -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-
+        <!-- SPRING WEB -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- MySQL -->
+        <!-- SPRING DATA JPA -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <scope>runtime</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- H2 -->
+        <!-- H2 DATABASE -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- ACTUATOR -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- PROMETHEUS EXPORT -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- JVM METRICS (TRÈS IMPORTANT) -->
+       
+
+        <!-- LOMBOK -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <version>1.18.30</version>
+            <scope>provided</scope>
         </dependency>
 
-        <!-- Tests -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Swagger -->
+        <!-- SWAGGER -->
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-boot-starter</artifactId>
             <version>3.0.0</version>
+        </dependency>
+
+        <!-- TEST -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
@@ -77,14 +81,14 @@
     <build>
         <plugins>
 
-            <!-- Compiler -->
+            <!-- COMPILER -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
             </plugin>
 
-            <!-- Spring Boot -->
+            <!-- SPRING BOOT -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -92,24 +96,5 @@
 
         </plugins>
     </build>
-
-    <!-- ✅ CONFIG NEXUS COMPLETE -->
-    <distributionManagement>
-
-        <!-- Releases -->
-        <repository>
-            <id>nexus-creds</id>
-            <name>Nexus Releases</name>
-            <url>http://localhost:8081/repository/maven-releases/</url>
-        </repository>
-
-        <!-- Snapshots -->
-        <snapshotRepository>
-            <id>nexus</id>
-            <name>Nexus Snapshots</name>
-            <url>http://localhost:8081/repository/maven-snapshots/</url>
-        </snapshotRepository>
-
-    </distributionManagement>
 
 </project>
