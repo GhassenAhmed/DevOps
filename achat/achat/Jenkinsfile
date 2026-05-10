@@ -53,6 +53,24 @@ pipeline {
             }
         }
 
+        stage('OWASP Dependency Check') {
+            steps {
+
+                dependencyCheck additionalArguments: '--scan .',
+                odcInstallation: 'OWASP-DC'
+
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+
+        stage('Trivy Scan') {
+            steps {
+
+                sh 'trivy fs .'
+
+            }
+        }
+
         stage('Deploy to Nexus') {
             steps {
                 script {
