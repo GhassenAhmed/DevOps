@@ -6,6 +6,8 @@ pipeline {
         MVN = '/var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/Maven3/bin/mvn'
         NEXUS_URL = 'http://172.17.0.1:8081'
         NEXUS_REPO = 'maven-releases'
+        DC_HOME = '/var/jenkins_home/tools/org.jenkinsci.plugins.DependencyCheck.tools.DependencyCheckInstallation/OWASP-DC'
+        NVD_API_KEY = 'b4fb1df4-5897-4cdc-b243-979ce2f487d1'
     }
     stages {
 
@@ -62,6 +64,32 @@ pipeline {
             }
         }
 
+        stage('OWASP Dependency Check') {
+            steps {
+                echo '🔒 Scan OWASP des dépendances...'
+                dir('achat/achat') {
+                    sh '''
+                        ${DC_HOME}/bin/dependency-check.sh \
+                            --scan ./ \
+                            --format HTML \
+                            --format XML \
+                            --out ./dependency-check-report \
+                            --project achat \
+                            --nvdApiKey ${NVD_API_KEY} || true
+                    '''
+                }
+            }
+            post {
+                always {
+                    dependencyCheckPublisher(
+                        pattern: 'achat/achat/dependency-check-report/dependency-check-report.xml',
+                        failedTotalCritical: 0,
+                        unstableTotalHigh: 10
+                    )
+                }
+            }
+        }
+
         stage('Nexus Deploy') {
             steps {
                 echo '📦 Publication vers Nexus...'
@@ -103,7 +131,7 @@ pipeline {
 
         stage('Trivy Scan - Image') {
             steps {
-                echo '🔒 Scan Trivy image Docker (OS uniquement)...'
+                echo '🔒 Scan Trivy image Docker...'
                 sh '''
                     trivy image \
                         --scanners vuln \
