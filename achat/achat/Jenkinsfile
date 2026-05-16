@@ -73,7 +73,7 @@ pipeline {
                             --scan ./ \
                             --format HTML \
                             --format XML \
-                            --out ./dependency-check-report \
+                            --out dependency-check-report \
                             --project achat \
                             --nvdApiKey ${NVD_API_KEY} \
 			    --disableOssIndex || true
