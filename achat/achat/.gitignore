@@ -29,5 +29,13 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+Screenshot 2026-05-10 112102.png
+Screenshot 2026-05-10 112327.png
+docker_ps_all.png
+files (1).zip
+grafana_dashboard.png
+prometheus_targets.png
+sprint5_prometheus_grafana.tex
+
 ### VS Code ###
 .vscode/

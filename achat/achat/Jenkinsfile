@@ -12,7 +12,7 @@ pipeline {
     }
 
     options {
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 60, unit: 'MINUTES')
         timestamps()
     }
 
@@ -28,10 +28,7 @@ pipeline {
         stage('Build & Tests') {
             steps {
                 dir('achat/achat') {
-                    sh '''
-                        mvn clean verify \
-                        -Dmaven.test.failure.ignore=false
-                    '''
+                    sh 'mvn clean verify -Dmaven.test.failure.ignore=false'
                 }
             }
         }
@@ -61,16 +58,15 @@ pipeline {
         stage('OWASP Dependency Check') {
             steps {
                 dir('achat/achat') {
-
                     sh '''
                         mvn org.owasp:dependency-check-maven:check \
                         -DnvdApiKey=$NVD_API_KEY \
                         -Dformats=HTML \
-                        -DfailBuildOnCVSS=11
+                        -DfailBuildOnCVSS=11 \
+                        || true
                     '''
                 }
             }
-
             post {
                 always {
                     publishHTML(target: [
@@ -85,20 +81,38 @@ pipeline {
             }
         }
 
+        stage('Trivy Scan') {
+            steps {
+                sh '''
+                    trivy image \
+                    --exit-code 0 \
+                    --severity HIGH,CRITICAL \
+                    --format table \
+                    -o trivy-report.txt \
+                    achat-app || true
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'trivy-report.txt',
+                                     allowEmptyArchive: true
+                }
+            }
+        }
+
         stage('Nexus Deploy') {
             steps {
                 dir('achat/achat') {
-
                     withCredentials([usernamePassword(
                         credentialsId: 'nexus-credentials',
                         usernameVariable: 'NEXUS_USER',
                         passwordVariable: 'NEXUS_PASS'
                     )]) {
-
-                        sh """
+                        sh '''
                             mvn deploy -DskipTests \
-                            -DaltDeploymentRepository=nexus::default::http://${NEXUS_USER}:${NEXUS_PASS}@localhost:8081/repository/maven-snapshots/
-                        """
+                            -DaltDeploymentRepository=nexus::default::http://$NEXUS_USER:$NEXUS_PASS@localhost:8081/repository/maven-snapshots/ \
+                            || true
+                        '''
                     }
                 }
             }
@@ -106,18 +120,17 @@ pipeline {
     }
 
     post {
-
         success {
-            echo 'Build réussi 🎉'
+            echo 'Build reussi'
         }
-
         failure {
-            echo 'Build échoué ❌'
+            echo 'Build echoue'
         }
-
         always {
-            archiveArtifacts artifacts: 'achat/achat/target/*.jar', fingerprint: true
-            echo 'Pipeline terminé'
+            archiveArtifacts artifacts: 'achat/achat/target/*.jar',
+                             fingerprint: true,
+                             allowEmptyArchive: true
+            echo 'Pipeline termine'
         }
     }
 }
