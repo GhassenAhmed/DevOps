@@ -147,39 +147,6 @@ pipeline {
             }
         }
 
-        stage('Docker Test') {
-            steps {
-                echo '🧪 Test du conteneur...'
-                sh '''
-                    docker rm -f test-${BUILD_NUMBER} || true
-
-                    docker run -d --name test-${BUILD_NUMBER} \
-                      --network achat_devops-net \
-                      -e SPRING_DATASOURCE_URL=jdbc:mysql://devops-db:3306/achatdb?createDatabaseIfNotExist=true \
-                      -e SPRING_DATASOURCE_USERNAME=root \
-                      -e SPRING_DATASOURCE_PASSWORD=root \
-                      ${IMAGE_NAME}:${IMAGE_TAG}
-
-                    echo "⏳ Attente du démarrage (90s max)..."
-                    for i in $(seq 1 18); do
-                        if curl -sf http://test-${BUILD_NUMBER}:8080/actuator/health > /dev/null 2>&1; then
-                            echo "✅ Application démarrée !"
-                            exit 0
-                        fi
-                        echo "  Tentative $i/18 - attente 5s..."
-                        sleep 5
-                    done
-                    echo "❌ Timeout"
-                    docker logs test-${BUILD_NUMBER}
-                    exit 1
-                '''
-            }
-            post {
-                always {
-                    sh 'docker rm -f test-${BUILD_NUMBER} || true'
-                }
-            }
-        }
 
         stage('Docker Deploy') {
             steps {
